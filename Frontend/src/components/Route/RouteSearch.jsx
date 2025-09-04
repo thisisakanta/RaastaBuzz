@@ -7,40 +7,29 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   InputAdornment,
   Paper,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { Autocomplete } from "@react-google-maps/api";
+import { useRef, useState } from "react";
 
-const RouteSearch = ({ onRouteSelect, selectedRoute }) => {
-  const [startLocation, setStartLocation] = useState("");
-  const [endLocation, setEndLocation] = useState("");
+const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Demo locations in Bangladesh for autocomplete
-  const demoLocations = [
-    "Dhaka, Bangladesh",
-    "Chittagong, Bangladesh",
-    "Sylhet, Bangladesh",
-    "Rajshahi, Bangladesh",
-    "Khulna, Bangladesh",
-    "Barisal, Bangladesh",
-
-    "Rangpur, Bangladesh",
-    "Mymensingh, Bangladesh",
-    "Dhanmondi, Dhaka",
-    "Gulshan, Dhaka",
-    "Uttara, Dhaka",
-    "Wari, Dhaka",
-    "Motijheel, Dhaka",
-  ];
+  const originRef = useRef();
+  const destinationRef = useRef();
 
   const calculateRoute = async () => {
-    if (!startLocation.trim() || !endLocation.trim()) {
+    if (
+      !originRef.current?.value.trim() ||
+      !destinationRef.current?.value.trim()
+    ) {
       setError("Please enter both start and destination locations");
       return;
     }
@@ -49,43 +38,45 @@ const RouteSearch = ({ onRouteSelect, selectedRoute }) => {
     setError("");
 
     try {
-      // Demo route calculation - in real app, use routing service like OpenRouteService or MapBox
-      const demoRouteData = {
-        start: {
-          name: startLocation,
-          coordinates: [90.4125, 23.8103], // Demo coordinates for Dhaka
-        },
-        end: {
-          name: endLocation,
-          coordinates: [90.42, 23.82], // Demo destination coordinates
-        },
-        waypoints: [
-          [90.4125, 23.8103],
-          [90.415, 23.813],
-          [90.4175, 23.816],
-          [90.42, 23.82],
-        ],
-        distance: "12.5 km",
-        duration: "25 mins",
-        trafficCondition: "moderate",
-      };
+      const directionsService = new window.google.maps.DirectionsService();
+      const results = await directionsService.route({
+        origin: originRef.current.value,
+        destination: destinationRef.current.value,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      });
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const route = results.routes[0];
+      const leg = route.legs[0];
 
-      onRouteSelect(demoRouteData);
+      // Pass the complete directions response and route info to parent
+      onRouteCalculated({
+        directionsResponse: results,
+        distance: leg.distance.text,
+        duration: leg.duration.text,
+        startAddress: leg.start_address,
+        endAddress: leg.end_address,
+      });
     } catch (err) {
-      setError("Failed to calculate route. Please try again.");
+      setError(
+        "Failed to calculate route. Please check the locations and try again."
+      );
+      console.error("Route calculation error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const clearRoute = () => {
-    setStartLocation("");
-    setEndLocation("");
-    onRouteSelect(null);
+    if (originRef.current) originRef.current.value = "";
+    if (destinationRef.current) destinationRef.current.value = "";
     setError("");
+    onClearRoute();
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      calculateRoute();
+    }
   };
 
   return (
@@ -94,38 +85,60 @@ const RouteSearch = ({ onRouteSelect, selectedRoute }) => {
         Find Route
       </Typography>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <TextField
-          fullWidth
-          label="Start Location"
-          value={startLocation}
-          onChange={(e) => setStartLocation(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <LocationIcon color="success" />
-              </InputAdornment>
-            ),
-          }}
-          placeholder="Enter starting point"
-          helperText="e.g., Dhanmondi, Dhaka"
-        />
+      <Stack spacing={2}>
+        {/* Start Location */}
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Start Location
+          </Typography>
+          <Autocomplete>
+            <TextField
+              inputRef={originRef}
+              fullWidth
+              placeholder="Enter starting point"
+              variant="outlined"
+              size="small"
+              onKeyPress={handleKeyPress}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationIcon color="success" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Autocomplete>
+          <Typography variant="caption" color="text.secondary">
+            e.g., Dhanmondi, Dhaka
+          </Typography>
+        </Box>
 
-        <TextField
-          fullWidth
-          label="Destination"
-          value={endLocation}
-          onChange={(e) => setEndLocation(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <LocationIcon color="error" />
-              </InputAdornment>
-            ),
-          }}
-          placeholder="Enter destination"
-          helperText="e.g., Gulshan, Dhaka"
-        />
+        {/* Destination */}
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Destination
+          </Typography>
+          <Autocomplete>
+            <TextField
+              inputRef={destinationRef}
+              fullWidth
+              placeholder="Enter destination"
+              variant="outlined"
+              size="small"
+              onKeyPress={handleKeyPress}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationIcon color="error" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Autocomplete>
+          <Typography variant="caption" color="text.secondary">
+            e.g., Gulshan, Dhaka
+          </Typography>
+        </Box>
 
         {error && (
           <Alert severity="error" size="small">
@@ -133,43 +146,59 @@ const RouteSearch = ({ onRouteSelect, selectedRoute }) => {
           </Alert>
         )}
 
-        <Box sx={{ display: "flex", gap: 1 }}>
+        {/* Action Buttons */}
+        <Button
+          variant="contained"
+          onClick={calculateRoute}
+          disabled={loading}
+          startIcon={
+            loading ? <CircularProgress size={16} /> : <NavigationIcon />
+          }
+          fullWidth
+          sx={{ textTransform: "uppercase" }}
+        >
+          {loading ? "Finding Route..." : "Find Route"}
+        </Button>
+
+        {routeData && (
           <Button
-            variant="contained"
-            onClick={calculateRoute}
-            disabled={loading}
-            startIcon={
-              loading ? <CircularProgress size={16} /> : <NavigationIcon />
-            }
+            variant="outlined"
+            onClick={clearRoute}
+            startIcon={<ClearIcon />}
             fullWidth
           >
-            {loading ? "Finding Route..." : "Find Route"}
+            Clear Route
           </Button>
+        )}
 
-          {selectedRoute && (
-            <Button
-              variant="outlined"
-              onClick={clearRoute}
-              startIcon={<ClearIcon />}
-            >
-              Clear
-            </Button>
-          )}
-        </Box>
-
-        {selectedRoute && (
-          <Alert severity="success">
-            <Typography variant="body2">
+        {/* Route Information Display */}
+        {routeData && (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
               <strong>Route Found:</strong>
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+              <Chip
+                label={`Distance: ${routeData.distance}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+              <Chip
+                label={`Duration: ${routeData.duration}`}
+                size="small"
+                color="secondary"
+                variant="outlined"
+              />
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              From: {routeData.startAddress}
               <br />
-              {selectedRoute.start.name} → {selectedRoute.end.name}
-              <br />
-              Distance: {selectedRoute.distance} | Duration:{" "}
-              {selectedRoute.duration}
+              To: {routeData.endAddress}
             </Typography>
           </Alert>
         )}
-      </Box>
+      </Stack>
     </Paper>
   );
 };
