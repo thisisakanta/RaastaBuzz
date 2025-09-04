@@ -1,189 +1,238 @@
-import React, { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
-import { Box, Chip, Typography, Button, Avatar } from '@mui/material'
-import { ThumbUp, ThumbDown, Verified } from '@mui/icons-material'
-import L from 'leaflet'
-import { demoTrafficReports, trafficCategories } from '../../data/demoData'
-import { useAuth } from '../../context/AuthContext'
+import {
+  Clear as ClearIcon,
+  LocationOn as LocationIcon,
+  MyLocation as MyLocationIcon,
+} from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  IconButton,
+  Paper,
+  Skeleton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import {
+  Autocomplete,
+  DirectionsRenderer,
+  GoogleMap,
+  Marker,
+  useJsApiLoader,
+} from "@react-google-maps/api";
+import { useRef, useState } from "react";
 
-// Fix for default markers in react-leaflet
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-})
-
-// Custom marker icons for different traffic categories
-const createCategoryIcon = (category) => {
-  const categoryData = trafficCategories.find(cat => cat.id === category)
-  return new L.DivIcon({
-    html: `<div style="
-      background-color: ${categoryData?.color || '#607d8b'}; 
-      width: 30px; 
-      height: 30px; 
-      border-radius: 50%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      font-size: 16px;
-    ">${categoryData?.icon || '❗'}</div>`,
-    className: 'custom-marker',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
-  })
-}
-
-const MapClickHandler = ({ onMapClick }) => {
-  useMapEvents({
-    click: (e) => {
-      onMapClick && onMapClick(e.latlng)
-    }
-  })
-  return null
-}
+// Dhaka center coordinates for Bangladesh
+const center = { lat: 23.8103, lng: 90.4125 };
 
 const TrafficMap = ({ selectedRoute, onReportClick }) => {
-  const { user } = useAuth()
-  const [reports, setReports] = useState(demoTrafficReports)
-  
-  // Center map on Dhaka
-  const center = [23.8103, 90.4125]
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey:
+      import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
+      "AIzaSyCSMbnY17KJt2Y3J0iJau5zrcJ8dHLxGdo",
+    libraries: ["places"],
+  });
 
-  const handleVote = (reportId, voteType) => {
-    if (!user) return
-    
-    setReports(prev => prev.map(report => {
-      if (report.id === reportId) {
-        if (voteType === 'up') {
-          return { ...report, upvotes: report.upvotes + 1 }
-        } else {
-          return { ...report, downvotes: report.downvotes + 1 }
-        }
-      }
-      return report
-    }))
+  const [map, setMap] = useState(null);
+  const [directionsResponse, setDirectionsResponse] = useState(null);
+  const [distance, setDistance] = useState("");
+  const [duration, setDuration] = useState("");
+
+  const originRef = useRef();
+  const destinationRef = useRef();
+
+  if (!isLoaded) {
+    return (
+      <Box sx={{ height: "100%", p: 2 }}>
+        <Skeleton variant="rectangular" height="100%" />
+      </Box>
+    );
   }
 
-  const formatTimeAgo = (timestamp) => {
-    const now = new Date()
-    const reportTime = new Date(timestamp)
-    const diffInMinutes = Math.floor((now - reportTime) / (1000 * 60))
-    
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`
-    } else if (diffInMinutes < 1440) {
-      return `${Math.floor(diffInMinutes / 60)}h ago`
-    } else {
-      return `${Math.floor(diffInMinutes / 1440)}d ago`
+  async function calculateRoute() {
+    if (originRef.current.value === "" || destinationRef.current.value === "") {
+      return;
+    }
+
+    try {
+      const directionsService = new window.google.maps.DirectionsService();
+      const results = await directionsService.route({
+        origin: originRef.current.value,
+        destination: destinationRef.current.value,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      });
+
+      setDirectionsResponse(results);
+      setDistance(results.routes[0].legs[0].distance.text);
+      setDuration(results.routes[0].legs[0].duration.text);
+    } catch (error) {
+      console.error("Error calculating route:", error);
+    }
+  }
+
+  function clearRoute() {
+    setDirectionsResponse(null);
+    setDistance("");
+    setDuration("");
+    originRef.current.value = "";
+    destinationRef.current.value = "";
+  }
+
+  function centerMap() {
+    if (map) {
+      map.panTo(center);
+      map.setZoom(12);
     }
   }
 
   return (
-    <Box sx={{ height: '100%', position: 'relative' }}>
-      <MapContainer 
-        center={center} 
-        zoom={12} 
-        style={{ height: '100%', width: '100%' }}
+    <Box sx={{ position: "relative", height: "100%", width: "100%" }}>
+      {/* Google Map Container */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          height: "100%",
+          width: "100%",
+        }}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        
-        <MapClickHandler onMapClick={onReportClick} />
+        <GoogleMap
+          center={center}
+          zoom={12}
+          mapContainerStyle={{ width: "100%", height: "100%" }}
+          options={{
+            zoomControl: false,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
+          }}
+          onLoad={(map) => setMap(map)}
+        >
+          <Marker position={center} />
+          {directionsResponse && (
+            <DirectionsRenderer directions={directionsResponse} />
+          )}
+        </GoogleMap>
+      </Box>
 
-        {reports.map((report) => (
-          <Marker
-            key={report.id}
-            position={[report.location.lat, report.location.lng]}
-            icon={createCategoryIcon(report.category)}
+      {/* Route Search Panel */}
+      <Paper
+        elevation={3}
+        sx={{
+          position: "absolute",
+          top: 16,
+          left: 16,
+          right: 16,
+          zIndex: 1000,
+          p: 2,
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <Stack spacing={2}>
+          {/* Input Fields */}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <Box sx={{ flexGrow: 1 }}>
+              <Autocomplete>
+                <TextField
+                  inputRef={originRef}
+                  fullWidth
+                  placeholder="Enter starting point"
+                  label="From"
+                  variant="outlined"
+                  size="small"
+                  InputProps={{
+                    startAdornment: (
+                      <LocationIcon color="success" sx={{ mr: 1 }} />
+                    ),
+                  }}
+                />
+              </Autocomplete>
+            </Box>
+
+            <Box sx={{ flexGrow: 1 }}>
+              <Autocomplete>
+                <TextField
+                  inputRef={destinationRef}
+                  fullWidth
+                  placeholder="Enter destination"
+                  label="To"
+                  variant="outlined"
+                  size="small"
+                  InputProps={{
+                    startAdornment: (
+                      <LocationIcon color="error" sx={{ mr: 1 }} />
+                    ),
+                  }}
+                />
+              </Autocomplete>
+            </Box>
+
+            <ButtonGroup variant="contained" size="small">
+              <Button onClick={calculateRoute} color="primary">
+                Calculate Route
+              </Button>
+              <IconButton onClick={clearRoute} color="primary" size="small">
+                <ClearIcon />
+              </IconButton>
+            </ButtonGroup>
+          </Stack>
+
+          {/* Route Information */}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            justifyContent="space-between"
+            alignItems="center"
           >
-            <Popup maxWidth={350}>
-              <Box sx={{ p: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Chip 
-                    label={trafficCategories.find(cat => cat.id === report.category)?.label}
-                    size="small"
-                    sx={{ 
-                      backgroundColor: trafficCategories.find(cat => cat.id === report.category)?.color,
-                      color: 'white'
-                    }}
-                  />
-                  {report.verified && (
-                    <Verified color="primary" fontSize="small" />
-                  )}
-                </Box>
-                
-                <Typography variant="h6" gutterBottom>
-                  {report.title}
-                </Typography>
-                
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {report.description}
-                </Typography>
-                
-                <Typography variant="caption" display="block" gutterBottom>
-                  📍 {report.location.address}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 1 }}>
-                  <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
-                    {report.reportedBy.name.charAt(0)}
-                  </Avatar>
-                  <Typography variant="caption">
-                    {report.reportedBy.name} • {formatTimeAgo(report.timestamp)}
-                  </Typography>
-                </Box>
+            <Typography variant="body2" color="text.secondary">
+              Distance: <strong>{distance}</strong>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Duration: <strong>{duration}</strong>
+            </Typography>
+            <IconButton
+              onClick={centerMap}
+              color="primary"
+              size="small"
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                },
+              }}
+            >
+              <MyLocationIcon />
+            </IconButton>
+          </Stack>
+        </Stack>
+      </Paper>
 
-                {user && (
-                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                    <Button
-                      size="small"
-                      startIcon={<ThumbUp />}
-                      onClick={() => handleVote(report.id, 'up')}
-                      color="success"
-                    >
-                      {report.upvotes}
-                    </Button>
-                    <Button
-                      size="small"
-                      startIcon={<ThumbDown />}
-                      onClick={() => handleVote(report.id, 'down')}
-                      color="error"
-                    >
-                      {report.downvotes}
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-
-      {!user && (
-        <Box 
-          sx={{ 
-            position: 'absolute', 
-            top: 10, 
-            left: 10, 
-            right: 10, 
+      {/* Instructions */}
+      {!directionsResponse && (
+        <Paper
+          elevation={2}
+          sx={{
+            position: "absolute",
+            bottom: 16,
+            left: 16,
+            right: 16,
             zIndex: 1000,
-            backgroundColor: 'rgba(255,255,255,0.9)',
             p: 2,
-            borderRadius: 1
+            backgroundColor: "rgba(33, 150, 243, 0.9)",
+            color: "white",
           }}
         >
-          <Typography variant="body2" align="center">
-            👋 Click on map markers to see traffic reports. Sign in to vote and add your own reports!
+          <Typography variant="body2" textAlign="center">
+            🗺️ Enter origin and destination to find the best route in Bangladesh
           </Typography>
-        </Box>
+        </Paper>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default TrafficMap
+export default TrafficMap;

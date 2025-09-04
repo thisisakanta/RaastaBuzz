@@ -1,126 +1,177 @@
-import React, { useState } from 'react'
-import { 
-  Paper, 
-  Typography, 
-  TextField, 
-  Button, 
+import {
+  Clear as ClearIcon,
+  LocationOn as LocationIcon,
+  Navigation as NavigationIcon,
+} from "@mui/icons-material";
+import {
+  Alert,
   Box,
-  Autocomplete,
-  Divider
-} from '@mui/material'
-import { Search as SearchIcon, MyLocation as MyLocationIcon } from '@mui/icons-material'
-import { dhakaLocations } from '../../data/demoData'
+  Button,
+  CircularProgress,
+  InputAdornment,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 
 const RouteSearch = ({ onRouteSelect, selectedRoute }) => {
-  const [fromLocation, setFromLocation] = useState('')
-  const [toLocation, setToLocation] = useState('')
+  const [startLocation, setStartLocation] = useState("");
+  const [endLocation, setEndLocation] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSearch = () => {
-    if (fromLocation && toLocation) {
-      const route = {
-        from: fromLocation,
-        to: toLocation,
-        timestamp: new Date().toISOString()
-      }
-      onRouteSelect(route)
+  // Demo locations in Bangladesh for autocomplete
+  const demoLocations = [
+    "Dhaka, Bangladesh",
+    "Chittagong, Bangladesh",
+    "Sylhet, Bangladesh",
+    "Rajshahi, Bangladesh",
+    "Khulna, Bangladesh",
+    "Barisal, Bangladesh",
+
+    "Rangpur, Bangladesh",
+    "Mymensingh, Bangladesh",
+    "Dhanmondi, Dhaka",
+    "Gulshan, Dhaka",
+    "Uttara, Dhaka",
+    "Wari, Dhaka",
+    "Motijheel, Dhaka",
+  ];
+
+  const calculateRoute = async () => {
+    if (!startLocation.trim() || !endLocation.trim()) {
+      setError("Please enter both start and destination locations");
+      return;
     }
-  }
 
-  const handleCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // For demo, we'll use a nearby Dhaka location
-          setFromLocation('Current Location (Dhanmondi)')
+    setLoading(true);
+    setError("");
+
+    try {
+      // Demo route calculation - in real app, use routing service like OpenRouteService or MapBox
+      const demoRouteData = {
+        start: {
+          name: startLocation,
+          coordinates: [90.4125, 23.8103], // Demo coordinates for Dhaka
         },
-        (error) => {
-          console.error('Error getting location:', error)
-          setFromLocation('Current Location (Dhanmondi)') // Fallback for demo
-        }
-      )
+        end: {
+          name: endLocation,
+          coordinates: [90.42, 23.82], // Demo destination coordinates
+        },
+        waypoints: [
+          [90.4125, 23.8103],
+          [90.415, 23.813],
+          [90.4175, 23.816],
+          [90.42, 23.82],
+        ],
+        distance: "12.5 km",
+        duration: "25 mins",
+        trafficCondition: "moderate",
+      };
+
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      onRouteSelect(demoRouteData);
+    } catch (err) {
+      setError("Failed to calculate route. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const clearRoute = () => {
+    setStartLocation("");
+    setEndLocation("");
+    onRouteSelect(null);
+    setError("");
+  };
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Plan Your Route
+        Find Route
       </Typography>
-      
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Autocomplete
-            fullWidth
-            freeSolo
-            options={dhakaLocations.map(loc => loc.name)}
-            value={fromLocation}
-            onInputChange={(event, newValue) => setFromLocation(newValue || '')}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="From"
-                placeholder="Enter starting point"
-                variant="outlined"
-              />
-            )}
-          />
-          <Button
-            variant="outlined"
-            onClick={handleCurrentLocation}
-            sx={{ minWidth: 'auto', p: 1 }}
-          >
-            <MyLocationIcon />
-          </Button>
-        </Box>
 
-        <Autocomplete
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <TextField
           fullWidth
-          freeSolo
-          options={dhakaLocations.map(loc => loc.name)}
-          value={toLocation}
-          onInputChange={(event, newValue) => setToLocation(newValue || '')}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="To"
-              placeholder="Enter destination"
-              variant="outlined"
-            />
-          )}
+          label="Start Location"
+          value={startLocation}
+          onChange={(e) => setStartLocation(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LocationIcon color="success" />
+              </InputAdornment>
+            ),
+          }}
+          placeholder="Enter starting point"
+          helperText="e.g., Dhanmondi, Dhaka"
         />
 
-        <Button
-          variant="contained"
-          onClick={handleSearch}
-          disabled={!fromLocation || !toLocation}
-          startIcon={<SearchIcon />}
-          size="large"
-        >
-          Search Route
-        </Button>
+        <TextField
+          fullWidth
+          label="Destination"
+          value={endLocation}
+          onChange={(e) => setEndLocation(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LocationIcon color="error" />
+              </InputAdornment>
+            ),
+          }}
+          placeholder="Enter destination"
+          helperText="e.g., Gulshan, Dhaka"
+        />
+
+        {error && (
+          <Alert severity="error" size="small">
+            {error}
+          </Alert>
+        )}
+
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            onClick={calculateRoute}
+            disabled={loading}
+            startIcon={
+              loading ? <CircularProgress size={16} /> : <NavigationIcon />
+            }
+            fullWidth
+          >
+            {loading ? "Finding Route..." : "Find Route"}
+          </Button>
+
+          {selectedRoute && (
+            <Button
+              variant="outlined"
+              onClick={clearRoute}
+              startIcon={<ClearIcon />}
+            >
+              Clear
+            </Button>
+          )}
+        </Box>
+
+        {selectedRoute && (
+          <Alert severity="success">
+            <Typography variant="body2">
+              <strong>Route Found:</strong>
+              <br />
+              {selectedRoute.start.name} → {selectedRoute.end.name}
+              <br />
+              Distance: {selectedRoute.distance} | Duration:{" "}
+              {selectedRoute.duration}
+            </Typography>
+          </Alert>
+        )}
       </Box>
-
-      {selectedRoute && (
-        <>
-          <Divider sx={{ my: 2 }} />
-          <Box>
-            <Typography variant="subtitle2" color="primary" gutterBottom>
-              Current Route:
-            </Typography>
-            <Typography variant="body2">
-              📍 From: {selectedRoute.from}
-            </Typography>
-            <Typography variant="body2">
-              🎯 To: {selectedRoute.to}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Searched at: {new Date(selectedRoute.timestamp).toLocaleTimeString()}
-            </Typography>
-          </Box>
-        </>
-      )}
     </Paper>
-  )
-}
+  );
+};
 
-export default RouteSearch
+export default RouteSearch;
