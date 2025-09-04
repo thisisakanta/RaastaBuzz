@@ -1,5 +1,13 @@
 import { MyLocation as MyLocationIcon } from "@mui/icons-material";
-import { Box, IconButton, Skeleton } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+  Chip,
+} from "@mui/material";
 import {
   DirectionsRenderer,
   GoogleMap,
@@ -88,6 +96,43 @@ const TrafficMap = ({ routeData, onReportClick }) => {
       >
         <MyLocationIcon />
       </IconButton>
+
+      {/* Route Information Overlay - Only when route exists */}
+      {routeData?.directionsResponse && (
+        <Paper
+          elevation={3}
+          sx={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            zIndex: 1000,
+            p: 2,
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(10px)",
+            minWidth: 200,
+          }}
+        >
+          <Stack spacing={1} alignItems="center">
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">
+              Route Found
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <Chip
+                label={`${routeData.distance}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+              <Chip
+                label={`${routeData.duration}`}
+                size="small"
+                color="secondary"
+                variant="outlined"
+              />
+            </Stack>
+          </Stack>
+        </Paper>
+      )}
     </Box>
   );
 };

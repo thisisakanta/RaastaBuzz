@@ -1,5 +1,6 @@
 import { Navigation as NavigationIcon } from "@mui/icons-material";
 import { Alert, Box, Button, Grid, Paper, Typography } from "@mui/material";
+import { useJsApiLoader } from "@react-google-maps/api";
 import { useState } from "react";
 import TrafficMap from "../components/Map/TrafficMap";
 import RouteSearch from "../components/Route/RouteSearch";
@@ -7,10 +8,19 @@ import TrafficReportDialog from "../components/Traffic/TrafficReportDialog";
 import TrafficReportsList from "../components/Traffic/TrafficReportsList";
 import { useAuth } from "../context/AuthContext";
 
+const libraries = ["places"];
+
 const Home = () => {
   const { user } = useAuth();
   const [routeData, setRouteData] = useState(null);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+
+  // Load Google Maps API once at the top level
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey:
+      import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY",
+    libraries: libraries,
+  });
 
   const handleRouteCalculated = (data) => {
     setRouteData(data);
@@ -22,10 +32,19 @@ const Home = () => {
 
   const handleMapClick = (event) => {
     if (user && event?.latLng) {
-      // Handle map click for adding traffic reports
       setReportDialogOpen(true);
     }
   };
+
+  if (loadError) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">
+          Failed to load Google Maps. Please check your API key and try again.
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -83,7 +102,11 @@ const Home = () => {
         {/* Right Panel - Clean Map */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ height: 600, overflow: "hidden" }}>
-            <TrafficMap routeData={routeData} onReportClick={handleMapClick} />
+            <TrafficMap
+              routeData={routeData}
+              onReportClick={handleMapClick}
+              isLoaded={isLoaded}
+            />
           </Paper>
         </Grid>
       </Grid>

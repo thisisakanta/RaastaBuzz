@@ -15,8 +15,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Autocomplete } from "@react-google-maps/api";
+import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { useRef, useState } from "react";
+
+const libraries = ["places"];
 
 const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,20 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
   const originRef = useRef();
   const destinationRef = useRef();
 
+  // Ensure Google Maps API is loaded
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey:
+      import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY",
+    libraries: libraries,
+  });
+
   const calculateRoute = async () => {
+    // Check if Google Maps API is loaded
+    if (!isLoaded || !window.google) {
+      setError("Google Maps is loading. Please try again in a moment.");
+      return;
+    }
+
     if (
       !originRef.current?.value.trim() ||
       !destinationRef.current?.value.trim()
@@ -78,6 +93,33 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
       calculateRoute();
     }
   };
+
+  // Show loading state while Google Maps API loads
+  if (loadError) {
+    return (
+      <Paper sx={{ p: 2 }}>
+        <Alert severity="error">
+          Failed to load Google Maps. Please check your API key.
+        </Alert>
+      </Paper>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <Paper sx={{ p: 2 }}>
+        <Typography variant="h6" gutterBottom>
+          Find Route
+        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+          <CircularProgress />
+        </Box>
+        <Typography variant="body2" color="text.secondary" align="center">
+          Loading Google Maps...
+        </Typography>
+      </Paper>
+    );
+  }
 
   return (
     <Paper sx={{ p: 2 }}>
@@ -150,7 +192,7 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
         <Button
           variant="contained"
           onClick={calculateRoute}
-          disabled={loading}
+          disabled={loading || !isLoaded}
           startIcon={
             loading ? <CircularProgress size={16} /> : <NavigationIcon />
           }
