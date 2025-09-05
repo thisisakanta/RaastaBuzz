@@ -14,6 +14,7 @@ const Home = () => {
   const { user } = useAuth();
   const [routeData, setRouteData] = useState(null);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  console.log("User in Home:", user);
 
   // Load Google Maps API once at the top level
   const { isLoaded, loadError } = useJsApiLoader({

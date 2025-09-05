@@ -69,15 +69,19 @@ public class User {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+        @com.fasterxml.jackson.annotation.JsonManagedReference
     private Set<TrafficReport> trafficReports = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+        @com.fasterxml.jackson.annotation.JsonManagedReference
     private Set<SavedRoute> savedRoutes = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+        @com.fasterxml.jackson.annotation.JsonManagedReference
     private Set<ForumPost> forumPosts = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+        @com.fasterxml.jackson.annotation.JsonManagedReference
     private Set<Vote> votes = new HashSet<>();
 
     // Constructors

@@ -47,6 +47,7 @@ public class TrafficReportController {
     @GetMapping
     public ResponseEntity<List<TrafficReport>> getAllReports() {
         List<TrafficReport> reports = trafficReportService.getAllActiveReports();
+
         return ResponseEntity.ok(reports);
     }
     
@@ -94,7 +95,6 @@ public class TrafficReportController {
     }
     
     @PostMapping
-    @PreAuthorize("hasRole('CONTRIBUTOR') or hasRole('MODERATOR')")
     public ResponseEntity<?> createReport(
             @Valid @RequestBody TrafficReportRequest reportRequest,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {

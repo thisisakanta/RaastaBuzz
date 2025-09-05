@@ -40,6 +40,7 @@ public class ForumController {
     @GetMapping("/posts")
     public ResponseEntity<List<ForumPost>> getAllPosts() {
         List<ForumPost> posts = forumService.getAllActivePosts();
+        //System.out.println(posts);
         return ResponseEntity.ok(posts);
     }
     

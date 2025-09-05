@@ -88,6 +88,7 @@ public class TrafficReport {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+        @com.fasterxml.jackson.annotation.JsonBackReference
     private User user;
 
     @OneToMany(mappedBy = "trafficReport", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

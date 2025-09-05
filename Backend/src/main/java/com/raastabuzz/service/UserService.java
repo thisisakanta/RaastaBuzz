@@ -39,7 +39,7 @@ public class UserService {
         if (existsByEmail(registerRequest.getEmail())) {
             throw new RuntimeException("Error: Email is already taken!");
         }
-        
+        System.out.println("i am int");
         User user = new User();
         user.setName(registerRequest.getName());
         user.setEmail(registerRequest.getEmail());

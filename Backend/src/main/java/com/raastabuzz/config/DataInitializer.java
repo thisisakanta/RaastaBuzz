@@ -58,9 +58,9 @@ public class DataInitializer implements CommandLineRunner {
             
         createTrafficReport("Road Closed for Event", "Street blocked for political rally until 6 PM", 
             TrafficCategory.ROAD_CLOSED, Severity.HIGH, 23.7106, 90.4078, "Motijheel Commercial Area, Dhaka", contributor3, 20, 3);
-            
+
         createTrafficReport("Police Checkpoint", "Routine police checking causing slow traffic", 
-            TrafficCategory.CHECKPOINT, Severity.LOW, 23.8041, 90.4152, "Banani 11, Dhaka", contributor4, 5, 0);
+            TrafficCategory.CHECKPOINT, Severity.LOW, 23.727351059985754, 90.3899523071484, "Banani 11, Dhaka", contributor4, 5, 0);
         
         // Create demo forum posts
         createForumPost("Dhaka Traffic: Best Routes During Rush Hour", 

@@ -114,13 +114,13 @@ export const demoTrafficReports = [
 
 // Traffic categories
 export const trafficCategories = [
-  { id: 'traffic_jam', label: 'Traffic Jam', color: '#f44336', icon: '🚗' },
-  { id: 'accident', label: 'Accident', color: '#ff9800', icon: '🚨' },
-  { id: 'road_closed', label: 'Road Closed', color: '#e91e63', icon: '🚧' },
-  { id: 'flooding', label: 'Flooding', color: '#2196f3', icon: '🌊' },
-  { id: 'checkpoint', label: 'Police Checkpoint', color: '#9c27b0', icon: '👮' },
-  { id: 'construction', label: 'Construction Work', color: '#ff5722', icon: '🔨' },
-  { id: 'other', label: 'Other', color: '#607d8b', icon: '❗' }
+  { id: 'TRAFFIC_JAM', label: 'Traffic Jam', color: '#f44336', icon: '🚗' },
+  { id: 'ACCIDENT', label: 'Accident', color: '#ff9800', icon: '🚨' },
+  { id: 'ROAD_CLOSED', label: 'Road Closed', color: '#e91e63', icon: '🚧' },
+  { id: 'FLOODING', label: 'Flooding', color: '#2196f3', icon: '🌊' },
+  { id: 'CHECKPOINT', label: 'Police Checkpoint', color: '#9c27b0', icon: '👮' },
+  { id: 'CONSTRUCTION', label: 'Construction Work', color: '#ff5722', icon: '🔨' },
+  { id: 'OTHER', label: 'Other', color: '#607d8b', icon: '❗' }
 ]
 
 // Demo forum posts

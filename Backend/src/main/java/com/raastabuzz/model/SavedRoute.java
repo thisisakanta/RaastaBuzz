@@ -62,6 +62,7 @@ public class SavedRoute {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+        @com.fasterxml.jackson.annotation.JsonBackReference
     private User user;
 
     // Constructors
