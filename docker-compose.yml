@@ -6,9 +6,9 @@ services:
     image: postgres:16-alpine
     container_name: raastabuzz_db
     environment:
-      POSTGRES_DB: raastabuzz
-      POSTGRES_USER: raastauser
-      POSTGRES_PASSWORD: raastapass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - raastabuzz_postgres_data:/var/lib/postgresql/data
       # Optional: Add init scripts if needed
@@ -18,7 +18,7 @@ services:
     networks:
       - raastabuzz-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U raastauser -d raastabuzz"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -30,15 +30,15 @@ services:
       dockerfile: Dockerfile
     container_name: raastabuzz_backend
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/raastabuzz
-      SPRING_DATASOURCE_USERNAME: raastauser
-      SPRING_DATASOURCE_PASSWORD: raastapass
-      SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
-      SPRING_DATASOURCE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "true"
-      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
+      SPRING_DATASOURCE_DIALECT: ${SPRING_DATASOURCE_DIALECT}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL}
+      SERVER_PORT: ${SERVER_PORT}
     ports:
       - "8080:8080"
     depends_on:
