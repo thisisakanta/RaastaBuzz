@@ -150,7 +150,6 @@ public class TrafficReportController {
     }
     
     @PostMapping("/{id}/vote")
-    @PreAuthorize("hasRole('CONTRIBUTOR') or hasRole('MODERATOR')")
     public ResponseEntity<?> voteOnReport(
             @PathVariable Long id,
             @Valid @RequestBody VoteRequest voteRequest,

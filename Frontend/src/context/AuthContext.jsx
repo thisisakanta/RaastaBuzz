@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
@@ -17,11 +17,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // useEffect(() => {
-  //   // Check if user and token are saved in localStorage
   //   const savedUser = localStorage.getItem("raastabuzz_user");
   //   const savedToken = localStorage.getItem("raastabuzz_token");
-  //   console.log(savedUser);
-  //   if (savedUser && savedToken) {
+  //   if (
+  //     savedUser &&
+  //     savedUser !== "undefined" &&
+  //     savedToken &&
+  //     savedToken !== "undefined"
+  //   ) {
   //     setUser(JSON.parse(savedUser));
   //     setToken(savedToken);
   //   }
@@ -79,7 +82,17 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loading,
+    handleClose,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// In your LoginDialog component
+const handleClose = () => {
+  setUser(null);
+  setToken(null);
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  setShowLogin(false); // or whatever closes the dialog
 };

@@ -104,6 +104,11 @@ const getTimeAgo = (dateString) => {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   }
 };
+const isRecentReport = (report) => {
+  const now = new Date();
+  const reportTime = new Date(report.createdAt);
+  return (now - reportTime) / (1000 * 60 * 60) < 24;
+};
 
 const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
   const { user } = useAuth();
@@ -137,6 +142,37 @@ const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
       fetchTrafficReports();
     }
   }, [isLoaded, fetchTrafficReports]);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const unsubscribe = trafficReportService.subscribeToUpdates((report) => {
+      setTrafficReports((prevReports) => {
+        if (!report.active) {
+          // Remove deactivated report
+          const updated = prevReports.filter((r) => r.id !== report.id);
+          return updated;
+        } else if (isRecentReport(report)) {
+          // Add or update recent report
+          const exists = prevReports.some((r) => r.id === report.id);
+          let updated;
+          if (exists) {
+            updated = prevReports.map((r) => (r.id === report.id ? report : r));
+          } else {
+            updated = [...prevReports, report];
+          }
+          // Sort by createdAt descending
+          updated.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          // Slice to maxItems
+          return updated;
+        }
+        // If not recent and not in list, ignore
+        return prevReports;
+      });
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   // Handle voting on reports
   const handleVote = async (reportId, voteType) => {

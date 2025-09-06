@@ -92,6 +92,7 @@ public class TrafficReport {
     private User user;
 
     @OneToMany(mappedBy = "trafficReport", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonBackReference
     private Set<Vote> votes = new HashSet<>();
 
     // Constructors
