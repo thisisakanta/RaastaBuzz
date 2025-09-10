@@ -14,12 +14,9 @@ import {
   Typography,
 } from "@mui/material";
 import { GoogleMap, InfoWindow, Marker } from "@react-google-maps/api";
-import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { trafficReportService } from "../../services/trafficReportService";
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 // Dhaka center coordinates for Bangladesh
 const center = { lat: 23.8103, lng: 90.4125 };
@@ -93,7 +90,7 @@ const isRecentReport = (report) => {
 };
 
 const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [map, setMap] = useState(null);
   const [trafficReports, setTrafficReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -131,7 +128,7 @@ const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
     const unsubscribe = trafficReportService.subscribeToUpdates((report) => {
       setTrafficReports((prevReports) => {
         if (!report.active) {
-          // console.log(trafficReports[5].imageUrl);
+          console.log(trafficReports[5].imageUrl);
           return prevReports.filter((r) => r.id !== report.id);
         } else if (isRecentReport(report)) {
           const exists = prevReports.some((r) => r.id === report.id);
@@ -142,19 +139,16 @@ const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
             updated = [...prevReports, report];
           }
           updated.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          if (selectedReport && report.id === selectedReport.id) {
-            setSelectedReport(report);
-          }
-          // console.log(trafficReports[5].imageUrl);
+          console.log(trafficReports[5].imageUrl);
           return updated;
         }
-        // console.log(trafficReports[5].imageUrl);
+        console.log(trafficReports[5].imageUrl);
         return prevReports;
       });
     });
 
     return () => unsubscribe();
-  }, [selectedReport]);
+  }, []);
 
   // Initialize DirectionsRenderer
   useEffect(() => {
@@ -191,22 +185,8 @@ const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
     if (!user) return;
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/traffic-reports/${reportId}/vote`,
-        {
-          voteType,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await trafficReportService.voteOnReport(reportId, voteType);
       await fetchTrafficReports();
-      const updated = updatedReports.find((r) => r.id === reportId);
-      if (selectedReport && updated && selectedReport.id === reportId) {
-        setSelectedReport(updated);
-      }
     } catch (error) {
       console.error("Error voting on report:", error);
     }
@@ -299,9 +279,7 @@ const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
                       mr: 1,
                       flexShrink: 0,
                     }}
-                    onClick={() => {
-                      if (selectedReport.imageUrl) setImageDialogOpen(true);
-                    }}
+                    onClick={() => setImageDialogOpen(true)}
                   >
                     <img
                       src={selectedReport.imageUrl}
@@ -379,9 +357,7 @@ const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
                     size="small"
                     variant="outlined"
                     clickable={!!user}
-                    onClick={() =>
-                      user && handleVote(selectedReport.id, "UPVOTE")
-                    }
+                    onClick={() => user && handleVote(selectedReport.id, "UP")}
                   />
                   <Chip
                     label={`👎 ${selectedReport.downvotes}`}
@@ -389,7 +365,7 @@ const TrafficMap = ({ routeData, onReportClick, isLoaded }) => {
                     variant="outlined"
                     clickable={!!user}
                     onClick={() =>
-                      user && handleVote(selectedReport.id, "DOWNVOTE")
+                      user && handleVote(selectedReport.id, "DOWN")
                     }
                   />
                 </Stack>

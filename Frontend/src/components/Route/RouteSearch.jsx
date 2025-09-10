@@ -1,6 +1,9 @@
 import {
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
   Clear as ClearIcon,
   LocationOn as LocationIcon,
+  MyLocation,
   Navigation as NavigationIcon,
 } from "@mui/icons-material";
 import {
@@ -9,20 +12,24 @@ import {
   Button,
   Chip,
   CircularProgress,
+  IconButton,
   InputAdornment,
   Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const libraries = ["places"];
 
 const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [routes, setRoutes] = useState([]);
+  const [selectedRouteIdx, setSelectedRouteIdx] = useState(0);
 
   const originRef = useRef();
   const destinationRef = useRef();
@@ -33,6 +40,32 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
       import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY",
     libraries: libraries,
   });
+
+  // Autofill start location with current location
+  useEffect(() => {
+    if (isLoaded && window.google && originRef.current) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            const geocoder = new window.google.maps.Geocoder();
+            const latlng = { lat: latitude, lng: longitude };
+            geocoder.geocode({ location: latlng }, (results, status) => {
+              if (status === "OK" && results[0]) {
+                originRef.current.value = results[0].formatted_address;
+              } else {
+                originRef.current.value = `${latitude}, ${longitude}`;
+              }
+            });
+          },
+          (error) => {
+            // If user denies location, leave blank or show error
+            console.error("Geolocation error:", error);
+          }
+        );
+      }
+    }
+  }, [isLoaded]);
 
   const calculateRoute = async () => {
     // Check if Google Maps API is loaded
@@ -58,14 +91,18 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
         origin: originRef.current.value,
         destination: destinationRef.current.value,
         travelMode: window.google.maps.TravelMode.DRIVING,
+        provideRouteAlternatives: true,
       });
+
+      setRoutes(results.routes);
+      setSelectedRouteIdx(0);
 
       const route = results.routes[0];
       const leg = route.legs[0];
 
       // Pass the complete directions response and route info to parent
       onRouteCalculated({
-        directionsResponse: results,
+        directionsResponse: { ...results, routes: [route] },
         distance: leg.distance.text,
         duration: leg.duration.text,
         startAddress: leg.start_address,
@@ -81,10 +118,33 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
     }
   };
 
+  // Handle arrow click to change route
+  const handleRouteChange = (direction) => {
+    let newIdx = selectedRouteIdx + direction;
+    if (newIdx < 0) newIdx = routes.length - 1;
+    if (newIdx >= routes.length) newIdx = 0;
+    setSelectedRouteIdx(newIdx);
+
+    const route = routes[newIdx];
+    const leg = route.legs[0];
+    onRouteCalculated({
+      directionsResponse: {
+        ...routeData.directionsResponse,
+        routes: [route],
+      },
+      distance: leg.distance.text,
+      duration: leg.duration.text,
+      startAddress: leg.start_address,
+      endAddress: leg.end_address,
+    });
+  };
+
   const clearRoute = () => {
     if (originRef.current) originRef.current.value = "";
     if (destinationRef.current) destinationRef.current.value = "";
     setError("");
+    setRoutes([]);
+    setSelectedRouteIdx(0);
     onClearRoute();
   };
 
@@ -133,7 +193,7 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Start Location
           </Typography>
-          <Autocomplete>
+          <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               inputRef={originRef}
               fullWidth
@@ -149,7 +209,44 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
                 ),
               }}
             />
-          </Autocomplete>
+            <IconButton
+              color="primary"
+              sx={{ border: "1px solid #90caf9", bgcolor: "white" }}
+              onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                      const { latitude, longitude } = position.coords;
+                      // Optionally, reverse geocode to address using Google Maps API
+                      if (window.google && window.google.maps) {
+                        const geocoder = new window.google.maps.Geocoder();
+                        const latlng = { lat: latitude, lng: longitude };
+                        geocoder.geocode(
+                          { location: latlng },
+                          (results, status) => {
+                            if (status === "OK" && results[0]) {
+                              originRef.current.value =
+                                results[0].formatted_address;
+                            } else {
+                              originRef.current.value = `${latitude}, ${longitude}`;
+                            }
+                          }
+                        );
+                      } else {
+                        originRef.current.value = `${latitude}, ${longitude}`;
+                      }
+                    },
+                    () => {
+                      // Handle error or permission denied
+                    }
+                  );
+                }
+              }}
+              title="Use current location"
+            >
+              <MyLocation />
+            </IconButton>
+          </Box>
           <Typography variant="caption" color="text.secondary">
             e.g., Dhanmondi, Dhaka
           </Typography>
@@ -213,12 +310,34 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
           </Button>
         )}
 
-        {/* Route Information Display */}
+        {/* Route Information Display & Arrow Controls */}
         {routeData && (
           <Alert severity="success" sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Route Found:</strong>
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              {routes.length > 1 && (
+                <IconButton
+                  size="small"
+                  onClick={() => handleRouteChange(-1)}
+                  sx={{ mr: 1 }}
+                  aria-label="Previous route"
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+              )}
+              <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                <strong>Route Found:</strong>
+              </Typography>
+              {routes.length > 1 && (
+                <IconButton
+                  size="small"
+                  onClick={() => handleRouteChange(1)}
+                  sx={{ ml: 1 }}
+                  aria-label="Next route"
+                >
+                  <ArrowForwardIcon />
+                </IconButton>
+              )}
+            </Box>
             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
               <Chip
                 label={`Distance: ${routeData.distance}`}
@@ -232,6 +351,14 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
                 color="secondary"
                 variant="outlined"
               />
+              {routes.length > 1 && (
+                <Chip
+                  label={`Option ${selectedRouteIdx + 1} of ${routes.length}`}
+                  size="small"
+                  color="info"
+                  variant="outlined"
+                />
+              )}
             </Stack>
             <Typography variant="caption" color="text.secondary">
               From: {routeData.startAddress}

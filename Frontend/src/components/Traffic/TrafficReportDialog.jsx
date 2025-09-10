@@ -35,6 +35,7 @@ const TrafficReportDialog = ({ open, onClose }) => {
     longitude: null,
     address: "",
     imageUrl: "",
+    imageFile: null,
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -70,6 +71,18 @@ const TrafficReportDialog = ({ open, onClose }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Example function to get address from lat/lng
+  async function getAddressFromLatLng(lat, lng) {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      return data.results[0].formatted_address;
+    }
+    return "";
+  }
+
   const handleSubmit = async () => {
     if (
       !formData.title ||
@@ -84,39 +97,83 @@ const TrafficReportDialog = ({ open, onClose }) => {
     setLoading(true);
     setError(null);
 
-    const payload = {
-      title: formData.title,
-      description: formData.description,
-      category: formData.category,
-      severity: formData.severity,
-      latitude: formData.latitude,
-      longitude: formData.longitude,
-      address: formData.address,
-      imageUrl: formData.imageUrl,
-    };
-    console.log(payload);
-    // Replace with your actual backend endpoint
-    await axios.post(`${API_BASE_URL}/traffic-reports`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false);
-      setFormData({
-        title: "",
-        description: "",
-        category: "",
-        severity: "MEDIUM",
-        location: "",
-        latitude: null,
-        longitude: null,
-        address: "",
-        imageUrl: "",
-      });
-      onClose();
-    }, 3000);
+    let address = formData.address;
+    if (!address && formData.latitude && formData.longitude) {
+      address = await getAddressFromLatLng(
+        formData.latitude,
+        formData.longitude
+      );
+    }
+
+    try {
+      // 1. Submit the traffic report (without image)
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        severity: formData.severity,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        address: address,
+      };
+
+      const reportRes = await axios.post(
+        `${API_BASE_URL}/traffic-reports`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const reportId = reportRes.data.id; // Adjust if your backend returns a different field
+
+      // 2. If image is selected, upload it
+      if (formData.imageFile && reportId) {
+        const imageForm = new FormData();
+        imageForm.append("file", formData.imageFile);
+
+        const imageRes = await axios.post(
+          `${API_BASE_URL}/traffic-reports/${reportId}/image`,
+          imageForm,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        // Optionally, update the report with the image URL
+        setFormData((prev) => ({
+          ...prev,
+          imageUrl: imageRes.data.imageUrl,
+        }));
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        setFormData({
+          title: "",
+          description: "",
+          category: "",
+          severity: "MEDIUM",
+          location: "",
+          latitude: null,
+          longitude: null,
+          address: "",
+          imageUrl: "",
+          imageFile: null,
+        });
+        onClose();
+      }, 3000);
+    } catch (err) {
+      setError("Failed to submit report. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!user) return null;
@@ -241,20 +298,35 @@ const TrafficReportDialog = ({ open, onClose }) => {
               onChange={(e) => handleInputChange("description", e.target.value)}
             />
 
-            {/* Photo Upload (Disabled for demo) */}
+            {/* Photo Upload */}
             <Button
               variant="outlined"
+              component="label"
               startIcon={<PhotoCamera />}
-              disabled
               fullWidth
               sx={{ py: 1.5 }}
             >
-              Add Photo (Coming Soon)
+              Add Photo
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleInputChange("imageFile", e.target.files[0]);
+                  }
+                }}
+              />
             </Button>
-
-            <Typography variant="caption" color="text.secondary" align="center">
-              📸 Photo upload feature will be available in the next update
-            </Typography>
+            {formData.imageFile && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                align="center"
+              >
+                Selected: {formData.imageFile.name}
+              </Typography>
+            )}
           </Box>
         )}
       </DialogContent>

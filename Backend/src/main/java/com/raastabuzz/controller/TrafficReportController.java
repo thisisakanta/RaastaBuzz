@@ -2,8 +2,9 @@ package com.raastabuzz.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.raastabuzz.dto.request.TrafficReportRequest;
 import com.raastabuzz.dto.request.VoteRequest;
@@ -27,22 +29,39 @@ import com.raastabuzz.model.Severity;
 import com.raastabuzz.model.TrafficCategory;
 import com.raastabuzz.model.TrafficReport;
 import com.raastabuzz.model.User;
+import com.raastabuzz.repository.TrafficReportRepository;
 import com.raastabuzz.security.UserPrincipal;
+import com.raastabuzz.service.FirebaseStorageService;
 import com.raastabuzz.service.TrafficReportService;
 import com.raastabuzz.service.UserService;
 
 import jakarta.validation.Valid;
 
+
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/traffic-reports")
 public class TrafficReportController {
-    
-    @Autowired
-    private TrafficReportService trafficReportService;
-    
-    @Autowired
-    private UserService userService;
+
+
+    private final TrafficReportService trafficReportService;
+
+    private final UserService userService;
+
+    private final FirebaseStorageService firebaseStorageService;
+
+    private final TrafficReportRepository trafficReportRepository;
+    public TrafficReportController(
+            TrafficReportService trafficReportService,
+            UserService userService,
+            FirebaseStorageService firebaseStorageService,
+            TrafficReportRepository trafficReportRepository
+    ) {
+        this.trafficReportService = trafficReportService;
+        this.userService = userService;
+        this.firebaseStorageService = firebaseStorageService;
+        this.trafficReportRepository = trafficReportRepository;
+    }
     
     @GetMapping
     public ResponseEntity<List<TrafficReport>> getAllReports() {
@@ -168,5 +187,43 @@ public class TrafficReportController {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Error: " + e.getMessage()));
         }
+    }
+    
+    @PostMapping("/{reportId}/image")
+    public ResponseEntity<?> uploadReportImage(
+            @PathVariable Long reportId,
+            @RequestParam("file") MultipartFile file) {
+        Optional<TrafficReport> optionalReport = trafficReportRepository.findById(reportId);
+        if (optionalReport.isEmpty()) {
+            return ResponseEntity.badRequest().body("Traffic report not found");
+        }
+        try {
+            String imageUrl = firebaseStorageService.uploadReportImage(file, reportId);
+
+            TrafficReport report = optionalReport.get();
+            report.setImageUrl(imageUrl);
+            trafficReportRepository.save(report);
+
+            return ResponseEntity.ok().body(
+                    java.util.Map.of("message", "Image uploaded successfully", "imageUrl", imageUrl)
+            );
+        } catch (Exception e) {
+
+            return ResponseEntity.internalServerError().body("Failed to upload image");
+        }
+    }
+    
+    @GetMapping("/{reportId}/image")
+    public ResponseEntity<?> getTrafficReportImage(@PathVariable Long reportId) {
+        Optional<TrafficReport> optionalReport = trafficReportRepository.findById(reportId);
+        if (optionalReport.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Traffic report not found"));
+        }
+        TrafficReport report = optionalReport.get();
+        return ResponseEntity.ok(Map.of(
+            "reportId", report.getId(),
+            "imageUrl", report.getImageUrl(),
+            "hasImage", report.getImageUrl() != null && !report.getImageUrl().isEmpty()
+        ));
     }
 }
