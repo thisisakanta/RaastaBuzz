@@ -23,6 +23,8 @@ import {
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 
+import TrafficReportsList from "../Traffic/TrafficReportsList"; // Import the TrafficReportsList component
+
 const libraries = ["places"];
 
 const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
@@ -366,6 +368,18 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
               To: {routeData.endAddress}
             </Typography>
           </Alert>
+        )}
+
+        {/* Traffic Reports List - New Feature */}
+        {routeData && (
+          <TrafficReportsList
+            maxItems={10}
+            pathCoords={
+              routeData?.directionsResponse?.routes?.[selectedRouteIdx]
+                ?.overview_path || []
+            }
+            radiusKm={0.1}
+          />
         )}
       </Stack>
     </Paper>

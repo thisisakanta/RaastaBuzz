@@ -356,7 +356,52 @@ const isRecentReport = (report) => {
   return (now - reportTime) / (1000 * 60 * 60) < 24;
 };
 
-const TrafficReportsList = ({ maxItems = 5 }) => {
+// const TrafficReportsList = ({ maxItems = 5 }) => {
+//   const { user, token } = useAuth();
+//   const [reports, setReports] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+
+//   const fetchReports = async () => {
+//     try {
+//       setLoading(true);
+//       setError(null);
+//       const data = await trafficReportService.getRecentReports(24);
+//       setReports(data.slice(0, maxItems));
+//     } catch (err) {
+//       console.error("Error fetching reports:", err);
+//       setError("Failed to load traffic reports");
+//       setReports([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchReports();
+//   }, [maxItems]);
+
+function isWithinRadius(lat1, lng1, lat2, lng2, radiusKm) {
+  const toRad = (value) => (value * Math.PI) / 180;
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c <= radiusKm;
+}
+
+// Accept pathCoords and radius as props
+const TrafficReportsList = ({
+  maxItems = 10,
+  pathCoords = [],
+  radiusKm = 0.1,
+}) => {
   const { user, token } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -367,9 +412,24 @@ const TrafficReportsList = ({ maxItems = 5 }) => {
       setLoading(true);
       setError(null);
       const data = await trafficReportService.getRecentReports(24);
-      setReports(data.slice(0, maxItems));
+
+      // If pathCoords provided, filter reports near the route
+      let filtered = data;
+      if (pathCoords.length > 0) {
+        filtered = data.filter((report) =>
+          pathCoords.some((coord) =>
+            isWithinRadius(
+              typeof coord.lat === "function" ? coord.lat() : coord.lat,
+              typeof coord.lng === "function" ? coord.lng() : coord.lng,
+              report.latitude,
+              report.longitude,
+              radiusKm
+            )
+          )
+        );
+      }
+      setReports(filtered.slice(0, maxItems));
     } catch (err) {
-      console.error("Error fetching reports:", err);
       setError("Failed to load traffic reports");
       setReports([]);
     } finally {
@@ -379,7 +439,8 @@ const TrafficReportsList = ({ maxItems = 5 }) => {
 
   useEffect(() => {
     fetchReports();
-  }, [maxItems]);
+    // eslint-disable-next-line
+  }, [maxItems, JSON.stringify(pathCoords), radiusKm]);
 
   // Subscribe to real-time updates
   useEffect(() => {

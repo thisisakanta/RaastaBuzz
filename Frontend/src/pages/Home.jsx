@@ -96,7 +96,7 @@ const Home = () => {
             )}
 
             {/* Recent Traffic Reports */}
-            <TrafficReportsList />
+            {/* <TrafficReportsList /> */}
           </Box>
         </Grid>
 
