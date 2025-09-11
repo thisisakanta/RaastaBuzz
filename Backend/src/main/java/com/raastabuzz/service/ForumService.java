@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.raastabuzz.model.ForumComment;
 import com.raastabuzz.model.ForumPost;
 import com.raastabuzz.model.PostCategory;
 import com.raastabuzz.model.User;
+import com.raastabuzz.repository.ForumCommentRepository;
 import com.raastabuzz.repository.ForumPostRepository;
 
 @Service
@@ -18,6 +20,9 @@ public class ForumService {
     
     @Autowired
     private ForumPostRepository forumPostRepository;
+    
+    @Autowired
+    private ForumCommentRepository forumCommentRepository;
     
     public List<ForumPost> getAllActivePosts() {
         return forumPostRepository.findByActiveTrueOrderByCreatedAtDesc();
@@ -89,6 +94,25 @@ public class ForumService {
         
         post.setLikes(post.getLikes() + 1);
         return forumPostRepository.save(post);
+    }
+    
+    public List<ForumComment> getCommentsForPost(Long postId) {
+        ForumPost post = forumPostRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Forum post not found with id: " + postId));
+        return forumCommentRepository.findByPostOrderByCreatedAtAsc(post);
+    }
+    
+    public ForumComment addComment(Long postId, String content, User user) {
+        ForumPost post = forumPostRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Forum post not found with id: " + postId));
+        ForumComment comment = new ForumComment();
+        comment.setPost(post);
+        comment.setUser(user);
+        comment.setContent(content);
+        ForumComment saved = forumCommentRepository.save(comment);
+        post.setReplies(post.getReplies() + 1);
+        forumPostRepository.save(post);
+        return saved;
     }
     
     public Long getActivePostsCountByUser(User user) {
