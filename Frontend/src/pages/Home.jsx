@@ -1,7 +1,7 @@
-import { Navigation as NavigationIcon } from "@mui/icons-material";
+import NavigationIcon from "@mui/icons-material/Navigation";
 import { Alert, Box, Button, Grid, Paper, Typography } from "@mui/material";
 import { useJsApiLoader } from "@react-google-maps/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TrafficMap from "../components/Map/TrafficMap";
 import RouteSearch from "../components/Route/RouteSearch";
 import TrafficReportDialog from "../components/Traffic/TrafficReportDialog";
@@ -23,12 +23,12 @@ const Home = () => {
     libraries: libraries,
   });
 
-  const handleRouteCalculated = (data) => {
-    setRouteData(data);
-  };
-
-  const handleClearRoute = () => {
+  const handleClearRoute = async () => {
     setRouteData(null);
+    console.log("why you are not nulled");
+    // useEffect(() => {
+    //   console.log("routeData changed:", routeData);
+    // }, [routeData]);
   };
 
   const handleMapClick = (event) => {
@@ -77,7 +77,7 @@ const Home = () => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {/* Route Search with Google Maps Integration */}
             <RouteSearch
-              onRouteCalculated={handleRouteCalculated}
+              onRouteCalculated={setRouteData}
               routeData={routeData}
               onClearRoute={handleClearRoute}
             />
@@ -96,7 +96,7 @@ const Home = () => {
             )}
 
             {/* Recent Traffic Reports */}
-            <TrafficReportsList />
+            {/* <TrafficReportsList /> */}
           </Box>
         </Grid>
 

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,9 +21,12 @@ import com.raastabuzz.model.Vote;
 import com.raastabuzz.model.VoteType;
 import com.raastabuzz.repository.TrafficReportRepository;
 import com.raastabuzz.repository.VoteRepository;
+import org.springframework.web.bind.annotation.RestController;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
+@RestController
 public class TrafficReportService {
 
     @Autowired
