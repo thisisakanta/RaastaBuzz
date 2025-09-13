@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.raastabuzz.dto.response.MessageResponse;
 import com.raastabuzz.model.ForumPost;
@@ -147,6 +148,32 @@ public class ForumController {
         try {
             ForumPost post = forumService.likePost(id);
             return ResponseEntity.ok(post);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Error: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/posts/{id}/comments")
+    public ResponseEntity<?> getComments(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(forumService.getCommentsForPost(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Error: " + e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/posts/{id}/comments")
+    @PreAuthorize("hasRole('CONTRIBUTOR') or hasRole('MODERATOR')")
+    public ResponseEntity<?> addComment(
+            @PathVariable Long id,
+            @RequestParam("content") String content,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        try {
+            User user = userService.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            return ResponseEntity.ok(forumService.addComment(id, content, user));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Error: " + e.getMessage()));

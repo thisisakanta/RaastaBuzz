@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Box,
   Typography,
@@ -21,13 +21,38 @@ import {
   Star as StarIcon,
   Verified as VerifiedIcon
 } from '@mui/icons-material'
-import { demoForumPosts } from '../data/demoData'
+import { getAllPosts, getPostsByCategory, likePost, createPost, getComments, addComment } from '../services/forumService'
 import { useAuth } from '../context/AuthContext'
+import { TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
 
 const Forum = () => {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [selectedTab, setSelectedTab] = useState(0)
-  const [posts] = useState(demoForumPosts)
+  const [posts, setPosts] = useState([])
+  const [openDialog, setOpenDialog] = useState(false)
+  const [newPost, setNewPost] = useState({ title: '', content: '', category: 'GENERAL' })
+  const [expandedComments, setExpandedComments] = useState({})
+  const [commentsCache, setCommentsCache] = useState({})
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (selectedTab === 0) {
+          const data = await getAllPosts()
+          setPosts(data)
+        } else if (selectedTab === 1) {
+          setPosts(await getPostsByCategory('TIPS'))
+        } else if (selectedTab === 2) {
+          setPosts(await getPostsByCategory('SAFETY'))
+        } else if (selectedTab === 3) {
+          setPosts(await getPostsByCategory('FEATURE_REQUEST'))
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    load()
+  }, [selectedTab])
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue)
@@ -63,14 +88,7 @@ const Forum = () => {
     }
   }
 
-  const filteredPosts = selectedTab === 0 
-    ? posts 
-    : posts.filter(post => {
-        if (selectedTab === 1) return post.category === 'tips'
-        if (selectedTab === 2) return post.category === 'safety'
-        if (selectedTab === 3) return post.category === 'feature_request'
-        return true
-      })
+  const filteredPosts = posts
 
   return (
     <Box>
@@ -89,9 +107,9 @@ const Forum = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            disabled
+            onClick={() => setOpenDialog(true)}
           >
-            New Post (Coming Soon)
+            New Post
           </Button>
         )}
       </Box>
@@ -125,27 +143,27 @@ const Forum = () => {
                   {/* Post Header */}
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
                     <Avatar sx={{ width: 40, height: 40 }}>
-                      {post.author.name.charAt(0)}
+                      {(post.user?.name || 'U').charAt(0)}
                     </Avatar>
                     
                     <Box sx={{ flex: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <Typography variant="subtitle1" fontWeight="bold">
-                          {post.author.name}
+                          {post.user?.name}
                         </Typography>
-                        {post.author.role === 'moderator' && (
+                        {post.user?.role === 'MODERATOR' && (
                           <VerifiedIcon color="primary" fontSize="small" />
                         )}
                         <Chip 
-                          label={getCategoryLabel(post.category)}
+                          label={getCategoryLabel(String(post.category || 'general').toLowerCase())}
                           size="small"
-                          color={getCategoryColor(post.category)}
+                          color={getCategoryColor(String(post.category || 'general').toLowerCase())}
                           variant="outlined"
                         />
                       </Box>
                       
                       <Typography variant="caption" color="text.secondary">
-                        {post.author.points} points • {formatTimeAgo(post.timestamp)}
+                        {post.user?.points || 0} points • {formatTimeAgo(post.createdAt)}
                       </Typography>
                     </Box>
                   </Box>
@@ -161,20 +179,76 @@ const Forum = () => {
 
                   {/* Post Actions */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-                    <IconButton size="small" color="primary">
+                    <IconButton size="small" color="primary" disabled={!user} onClick={async () => {
+                      try {
+                        const updated = await likePost(post.id, token)
+                        setPosts(prev => prev.map(p => p.id === updated.id ? updated : p))
+                      } catch (e) { console.error(e) }
+                    }}>
                       <ThumbUpIcon fontSize="small" />
                     </IconButton>
                     <Typography variant="body2" color="text.secondary">
                       {post.likes} likes
                     </Typography>
                     
-                    <IconButton size="small">
+                    <IconButton size="small" onClick={async () => {
+                      const expanded = !!expandedComments[post.id]
+                      const next = { ...expandedComments, [post.id]: !expanded }
+                      setExpandedComments(next)
+                      if (!expanded && !commentsCache[post.id]) {
+                        try {
+                          const list = await getComments(post.id)
+                          setCommentsCache({ ...commentsCache, [post.id]: { list, newContent: '' } })
+                        } catch {}
+                      }
+                    }}>
                       <CommentIcon fontSize="small" />
                     </IconButton>
                     <Typography variant="body2" color="text.secondary">
                       {post.replies} replies
                     </Typography>
                   </Box>
+
+                  {expandedComments[post.id] && (
+                    <Box sx={{ mt: 2 }}>
+                      <Divider sx={{ mb: 2 }} />
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {((commentsCache[post.id]?.list) || []).map((c) => (
+                          <Box key={c.id}>
+                            <Typography variant="subtitle2">{c.user?.name || 'User'}</Typography>
+                            <Typography variant="body2" color="text.secondary">{c.content}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                      {user && (
+                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            placeholder="Write a comment..."
+                            value={(commentsCache[post.id]?.newContent) || ''}
+                            onChange={(e) => {
+                              const state = commentsCache[post.id] || { list: [], newContent: '' }
+                              setCommentsCache({ ...commentsCache, [post.id]: { ...state, newContent: e.target.value } })
+                            }}
+                          />
+                          <Button variant="contained" onClick={async () => {
+                            const state = commentsCache[post.id]
+                            const content = state?.newContent || ''
+                            if (!content.trim()) return
+                            try {
+                              const created = await addComment(post.id, content, token)
+                              const list = Array.isArray(state?.list) ? state.list : []
+                              const next = { list: [...list, created], newContent: '' }
+                              setCommentsCache({ ...commentsCache, [post.id]: next })
+                              // bump replies in post
+                              setPosts(prev => prev.map(p => p.id === post.id ? { ...p, replies: (p.replies || 0) + 1 } : p))
+                            } catch (e) { console.error(e) }
+                          }}>Post</Button>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -245,6 +319,56 @@ const Forum = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* New Post Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>New Post</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <TextField
+            label="Title"
+            value={newPost.title}
+            onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+            fullWidth
+          />
+          <TextField
+            label="Content"
+            value={newPost.content}
+            onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+            fullWidth
+            multiline
+            minRows={4}
+          />
+          <TextField
+            label="Category"
+            value={newPost.category}
+            onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
+            fullWidth
+            select
+            SelectProps={{ native: true }}
+          >
+            {[
+              { value: 'GENERAL', label: 'General' },
+              { value: 'TIPS', label: 'Tips & Tricks' },
+              { value: 'SAFETY', label: 'Safety' },
+              { value: 'FEATURE_REQUEST', label: 'Feature Request' }
+            ].map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button variant="contained" onClick={async () => {
+            try {
+              const created = await createPost(newPost, token)
+              setOpenDialog(false)
+              setNewPost({ title: '', content: '', category: 'GENERAL' })
+              // Prepend to list when showing all or matching category
+              setPosts(prev => [created, ...prev])
+            } catch (e) { console.error(e) }
+          }}>Post</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
