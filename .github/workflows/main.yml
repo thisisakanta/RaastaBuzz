@@ -37,27 +37,26 @@ jobs:
       #     FIREBASE_STORAGE_BUCKET: test-bucket
       #     JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-      # 3. Build backend JAR
-      # - name: Build backend JAR
-      #   run: |
-      #     cd Backend
-      #     chmod +x mvnw
-      #     ./mvnw clean package -DskipTests
-      #     ls -la target/
+      #. Build backend JAR
+      - name: Build backend JAR
+        run: |
+          cd Backend
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
+          ls -la target/
 
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v3
-      #   with:
-      #     node-version: "20"
-      #     cache: "npm"
-      #     cache-dependency-path: Frontend/package-lock.json
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Frontend/package-lock.json
 
-      # - name: Install frontend dependencies
-      #   run: |
-      #     cd Frontend
-      #     npm ci
+      - name: Install frontend dependencies
+        run: |
+          cd Frontend
+          npm ci
       #     # npm test
-
       # 4. Login to Docker Hub
       - name: Login to Docker Hub
         run: |
