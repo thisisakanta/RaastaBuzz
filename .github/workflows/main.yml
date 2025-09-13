@@ -20,45 +20,45 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
-      - name: Run tests
-        run: |
-          cd Backend
-          # mvn clean test
-        env:
-          SPRING_PROFILES_ACTIVE: test
-          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
-          SPRING_DATASOURCE_USERNAME: sa
-          SPRING_DATASOURCE_PASSWORD: password
-          SPRING_DATASOURCE_DRIVER: org.h2.Driver
-          SPRING_DATASOURCE_DIALECT: org.hibernate.dialect.H2Dialect
-          SPRING_JPA_HIBERNATE_DDL_AUTO: update
-          SPRING_JPA_SHOW_SQL: false
-          FIREBASE_KEY: "${{ secrets.FIREBASE_KEY }}$"
-          FIREBASE_STORAGE_BUCKET: test-bucket
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      # - name: Run tests
+      #   run: |
+      #     cd Backend
+      #     # mvn clean test
+      #   env:
+      #     SPRING_PROFILES_ACTIVE: test
+      #     SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
+      #     SPRING_DATASOURCE_USERNAME: sa
+      #     SPRING_DATASOURCE_PASSWORD: password
+      #     SPRING_DATASOURCE_DRIVER: org.h2.Driver
+      #     SPRING_DATASOURCE_DIALECT: org.hibernate.dialect.H2Dialect
+      #     SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      #     SPRING_JPA_SHOW_SQL: false
+      #     FIREBASE_KEY: "${{ secrets.FIREBASE_KEY }}$"
+      #     FIREBASE_STORAGE_BUCKET: test-bucket
+      #     JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       # 3. Build backend JAR
-      - name: Build backend JAR
-        run: |
-          cd Backend
-          chmod +x mvnw
-          ./mvnw clean package -DskipTests
-          ls -la target/
+      # - name: Build backend JAR
+      #   run: |
+      #     cd Backend
+      #     chmod +x mvnw
+      #     ./mvnw clean package -DskipTests
+      #     ls -la target/
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: Frontend/package-lock.json
+      # - name: Set up Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: "20"
+      #     cache: "npm"
+      #     cache-dependency-path: Frontend/package-lock.json
 
-      - name: Install frontend dependencies
-        run: |
-          cd Frontend
-          npm ci
-          # npm test
+      # - name: Install frontend dependencies
+      #   run: |
+      #     cd Frontend
+      #     npm ci
+      #     # npm test
 
-        # 4. Login to Docker Hub
+      # 4. Login to Docker Hub
       - name: Login to Docker Hub
         run: |
           echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
