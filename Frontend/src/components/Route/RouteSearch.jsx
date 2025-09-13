@@ -38,8 +38,7 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
 
   // Ensure Google Maps API is loaded
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey:
-      import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: libraries,
   });
 
@@ -129,6 +128,7 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
 
     const route = routes[newIdx];
     const leg = route.legs[0];
+    console.log(route);
     onRouteCalculated({
       directionsResponse: {
         ...routeData.directionsResponse,
@@ -374,10 +374,7 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
         {routeData && (
           <TrafficReportsList
             maxItems={10}
-            pathCoords={
-              routeData?.directionsResponse?.routes?.[selectedRouteIdx]
-                ?.overview_path || []
-            }
+            pathCoords={routes?.[selectedRouteIdx]?.overview_path || []}
             radiusKm={0.1}
           />
         )}

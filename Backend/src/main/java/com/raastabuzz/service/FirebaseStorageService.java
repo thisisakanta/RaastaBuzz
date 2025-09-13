@@ -32,8 +32,10 @@ public class FirebaseStorageService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be empty");
         }
+        System.out.println("yes pleasse  storage");
 
         String fileName = "report_" + reportId + "_" + UUID.randomUUID() + getFileExtension(file.getOriginalFilename());
+        System.out.println(fileName);
         String objectName = TRAFFIC_REPORTS_FOLDER + "/" + reportId + "/" + fileName;
 
         BlobId blobId = BlobId.of(bucketName, objectName);
@@ -41,8 +43,10 @@ public class FirebaseStorageService {
                 .setContentType(file.getContentType())
                 .setCacheControl("public, max-age=31536000")
                 .build();
-
+        System.out.println("yes please");
         storage.create(blobInfo, file.getBytes());
+        System.out.println("yes please bhai");
+
 
 //        log.info("Traffic report image uploaded for reportId: {} with blob name: {}", reportId, objectName);
 

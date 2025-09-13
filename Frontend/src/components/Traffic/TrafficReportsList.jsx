@@ -382,6 +382,7 @@ const isRecentReport = (report) => {
 //   }, [maxItems]);
 
 function isWithinRadius(lat1, lng1, lat2, lng2, radiusKm) {
+  // console.log("Calculating distance between:", lat1, lng1, lat2, lng2);
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371; // Earth radius in km
   const dLat = toRad(lat2 - lat1);
@@ -400,7 +401,7 @@ function isWithinRadius(lat1, lng1, lat2, lng2, radiusKm) {
 const TrafficReportsList = ({
   maxItems = 10,
   pathCoords = [],
-  radiusKm = 0.1,
+  radiusKm = 0.01,
 }) => {
   const { user, token } = useAuth();
   const [reports, setReports] = useState([]);
@@ -415,6 +416,7 @@ const TrafficReportsList = ({
 
       // If pathCoords provided, filter reports near the route
       let filtered = data;
+      console.log("Path Coords:", pathCoords);
       if (pathCoords.length > 0) {
         filtered = data.filter((report) =>
           pathCoords.some((coord) =>
@@ -428,6 +430,7 @@ const TrafficReportsList = ({
           )
         );
       }
+      console.log("Filtered Reports:", filtered);
       setReports(filtered.slice(0, maxItems));
     } catch (err) {
       setError("Failed to load traffic reports");

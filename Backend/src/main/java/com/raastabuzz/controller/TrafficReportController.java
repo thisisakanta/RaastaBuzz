@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -49,7 +51,8 @@ public class TrafficReportController {
     private final UserService userService;
 
     private final FirebaseStorageService firebaseStorageService;
-
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
     private final TrafficReportRepository trafficReportRepository;
     public TrafficReportController(
             TrafficReportService trafficReportService,
@@ -199,16 +202,21 @@ public class TrafficReportController {
         }
         try {
             String imageUrl = firebaseStorageService.uploadReportImage(file, reportId);
+            System.out.println(imageUrl);
 
             TrafficReport report = optionalReport.get();
             report.setImageUrl(imageUrl);
             trafficReportRepository.save(report);
+            System.out.println("yes please");
+
+
+            messagingTemplate.convertAndSend("/topic/reports", report);
 
             return ResponseEntity.ok().body(
                     java.util.Map.of("message", "Image uploaded successfully", "imageUrl", imageUrl)
             );
         } catch (Exception e) {
-
+            e.printStackTrace(); // <-- Add this for debugging
             return ResponseEntity.internalServerError().body("Failed to upload image");
         }
     }

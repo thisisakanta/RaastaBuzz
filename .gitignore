@@ -133,6 +133,7 @@ Backend/.classpath
 Backend/.project
 Backend/.settings/
 Backend/bin/
+Backend/.env
 
 # OS
 .DS_Store
