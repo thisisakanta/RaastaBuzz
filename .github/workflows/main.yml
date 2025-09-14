@@ -102,8 +102,18 @@ jobs:
               image: ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-backend:latest
               container_name: raastabuzz_backend
               environment:
-                SPRING_PROFILES_ACTIVE: docker
-                # Add other env vars here
+                SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+                SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+                SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+                SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+                SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
+                SPRING_DATASOURCE_DIALECT: ${SPRING_DATASOURCE_DIALECT}
+                SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+                SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL}
+                SERVER_PORT: ${SERVER_PORT}
+                FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
+                FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+                
               ports:
                 - "8080:8080"
               depends_on:
