@@ -55,7 +55,6 @@ jobs:
         run: |
           cd Frontend
           npm ci
-      #     # npm test
       # 4. Login to Docker Hub
       - name: Login to Docker Hub
         run: |
@@ -139,6 +138,7 @@ jobs:
               driver: bridge
           COMPOSE_EOF
 
+
           # Connect to EC2 and create app directory
           ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "mkdir -p ~/raastabuzz-app"
 
@@ -153,7 +153,7 @@ jobs:
             docker-compose up -d
             sleep 15
             docker-compose ps
-            echo "🚀 Deployment completed!"
+            echo " Deployment completed!"
             echo "Frontend: http://${{ secrets.AWS_EC2_HOST }}:3000"
             echo "Backend: http://${{ secrets.AWS_EC2_HOST }}:8080"
           DEPLOY_EOF
