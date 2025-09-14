@@ -87,9 +87,9 @@ jobs:
               image: postgres:16-alpine
               container_name: raastabuzz_db
               environment:
-                POSTGRES_DB: ${secrets.POSTGRES_DB}
-                POSTGRES_USER: ${secrets.POSTGRES_USER}
-                POSTGRES_PASSWORD: ${secrets.POSTGRES_PASSWORD}
+                POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+                POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+                POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
               volumes:
                 - postgres_data:/var/lib/postgresql/data
               ports:
@@ -102,15 +102,17 @@ jobs:
               image: ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-backend:latest
               container_name: raastabuzz_backend
               environment:
-                SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-                SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-                SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-                SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-                SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
-                SPRING_DATASOURCE_DIALECT: ${SPRING_DATASOURCE_DIALECT}
-                SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
-                SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL}
-                SERVER_PORT: ${SERVER_PORT}
+                SPRING_PROFILES_ACTIVE: ${{ secrets.SPRING_PROFILES_ACTIVE }}
+                SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+                SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+                SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+                SPRING_DATASOURCE_DRIVER: ${{ secrets.SPRING_DATASOURCE_DRIVER }}
+                SPRING_DATASOURCE_DIALECT: ${{ secrets.SPRING_DATASOURCE_DIALECT }}
+                SPRING_JPA_HIBERNATE_DDL_AUTO: ${{ secrets.SPRING_JPA_HIBERNATE_DDL_AUTO }}
+                SPRING_JPA_SHOW_SQL: ${{ secrets.SPRING_JPA_SHOW_SQL }}
+                SERVER_PORT: ${{ secrets.SERVER_PORT }}
+                FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
+                FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
               ports:
                 - "8080:8080"
               depends_on:
