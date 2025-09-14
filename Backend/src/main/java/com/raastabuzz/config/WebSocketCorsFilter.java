@@ -30,7 +30,9 @@ public class WebSocketCorsFilter implements Filter {
         if (requestURI != null && (requestURI.startsWith("/ws")  || requestURI.contains("sockjs"))) {
 //            System.out.println("1");
             // Allow specific origins or all for development
-            if (origin != null && (origin.startsWith("http://localhost:"))) {
+            if (origin != null && (origin.startsWith("http://localhost:")
+                    || origin.startsWith("http://ec2-51-20-34-148.eu-north-1.compute.amazonaws.com:3030")
+                    || origin.startsWith("http://51.20.34.148:3000"))) {
                 response.setHeader("Access-Control-Allow-Origin", origin);
 //                System.out.println("2");
             } else if (origin != null && origin.startsWith("http://localhost:")) {

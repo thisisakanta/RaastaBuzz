@@ -73,3 +73,81 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-frontend:latest ./Frontend
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-frontend:latest
+
+      # 7. Deploy to AWS EC2 via SSH
+      - name: Deploy to AWS EC2
+        run: |
+          # Save SSH key
+          echo "${{ secrets.AWS_EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+
+          # Create docker-compose file with Docker Hub images
+          cat > docker-compose.yml << 'COMPOSE_EOF'
+          version: '3.8'
+          services:
+            database:
+              image: postgres:16-alpine
+              container_name: raastabuzz_db
+              environment:
+                POSTGRES_DB: ${secrets.POSTGRES_DB}
+                POSTGRES_USER: ${secrets.POSTGRES_USER}
+                POSTGRES_PASSWORD: ${secrets.POSTGRES_PASSWORD}
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              ports:
+                - "5432:5432"
+              networks:
+                - app-network
+              restart: unless-stopped
+
+            backend:
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-backend:latest
+              container_name: raastabuzz_backend
+              environment:
+                SPRING_PROFILES_ACTIVE: docker
+                # Add other env vars here
+              ports:
+                - "8080:8080"
+              depends_on:
+                - database
+              networks:
+                - app-network
+              restart: unless-stopped
+
+            frontend:
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-frontend:latest
+              container_name: raastabuzz_frontend
+              ports:
+                - "3000:80"
+              depends_on:
+                - backend
+              networks:
+                - app-network
+              restart: unless-stopped
+
+          volumes:
+            postgres_data:
+
+          networks:
+            app-network:
+              driver: bridge
+          COMPOSE_EOF
+
+          # Copy docker-compose file to EC2
+          scp -i key.pem -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/raastabuzz-app/
+
+          # Deploy on EC2
+          ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} << 'DEPLOY_EOF'
+            cd ~/raastabuzz-app
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
+            sleep 15
+            docker-compose ps
+            echo "🚀 Deployment completed!"
+            echo "Frontend: http://${{ secrets.AWS_EC2_HOST }}:3000"
+            echo "Backend: http://${{ secrets.AWS_EC2_HOST }}:8080"
+          DEPLOY_EOF
+
+          # Clean up
+          rm -f key.pem docker-compose.yml
