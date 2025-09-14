@@ -131,6 +131,10 @@ jobs:
               driver: bridge
           COMPOSE_EOF
 
+          
+          # Connect to EC2 and create app directory
+          ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "mkdir -p ~/raastabuzz-app"
+
           # Copy docker-compose file to EC2
           scp -i key.pem -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/raastabuzz-app/
 
