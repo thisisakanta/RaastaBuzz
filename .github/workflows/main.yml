@@ -103,8 +103,15 @@ jobs:
               image: ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-backend:latest
               container_name: raastabuzz_backend
               environment:
-                SPRING_PROFILES_ACTIVE: docker
-                # Add other env vars here
+                SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+                SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+                SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+                SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+                SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
+                SPRING_DATASOURCE_DIALECT: ${SPRING_DATASOURCE_DIALECT}
+                SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+                SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL}
+                SERVER_PORT: ${SERVER_PORT}
               ports:
                 - "8080:8080"
               depends_on:
@@ -131,6 +138,9 @@ jobs:
             app-network:
               driver: bridge
           COMPOSE_EOF
+
+          # Connect to EC2 and create app directory
+          ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "mkdir -p ~/raastabuzz-app"
 
           # Copy docker-compose file to EC2
           scp -i key.pem -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/raastabuzz-app/
