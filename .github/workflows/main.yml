@@ -106,6 +106,9 @@ jobs:
             frontend:
               image: ${{ secrets.DOCKERHUB_USERNAME }}/raastabuzz-frontend:latest
               container_name: raastabuzz_frontend
+              environment:
+                VITE_API_BASE_URL: ${{secrets.VITE_API_BASE_URL}}
+                VITE_GOOGLE_MAPS_API_KEY: ${{secrets.VITE_GOOGLE_MAPS_API_KEY}}
               ports:
                 - "3000:80"
               depends_on:
