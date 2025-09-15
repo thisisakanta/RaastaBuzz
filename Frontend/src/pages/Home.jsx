@@ -17,8 +17,7 @@ const Home = () => {
 
   // Load Google Maps API once at the top level
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey:
-      import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: libraries,
   });
 
