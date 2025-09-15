@@ -64,7 +64,6 @@ jobs:
 
           # Create docker-compose file with Docker Hub images
           cat > docker-compose.yml << 'COMPOSE_EOF'
-          version: '3.8'
           services:
             database:
               image: postgres:16-alpine
