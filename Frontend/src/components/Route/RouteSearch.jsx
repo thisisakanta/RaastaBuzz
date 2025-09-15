@@ -42,9 +42,6 @@ const RouteSearch = ({
   const originRef = useRef();
   const destinationRef = useRef();
 
-  // Ensure Google Maps API is loaded
-  const { isLoaded, loadError } = { isLoaded, loadError };
-
   // Autofill start location with current location
   useEffect(() => {
     if (isLoaded && window.google && originRef.current) {
