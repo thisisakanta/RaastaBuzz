@@ -20,8 +20,6 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
-     
-
       #. Build backend JAR
       - name: Build backend JAR
         run: |
@@ -35,7 +33,7 @@ jobs:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: Frontend/package-lock.json
-          
+
       - name: Install frontend dependencies
         run: |
           cd Frontend
@@ -96,7 +94,7 @@ jobs:
                 SPRING_JPA_HIBERNATE_DDL_AUTO: ${{ secrets.SPRING_JPA_HIBERNATE_DDL_AUTO }}
                 SPRING_JPA_SHOW_SQL: ${{ secrets.SPRING_JPA_SHOW_SQL }}
                 SERVER_PORT: ${{ secrets.SERVER_PORT }}
-                FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
+                FIREBASE_KEY: '${{ secrets.FIREBASE_KEY }}'
                 FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
               ports:
                 - "8080:8080"

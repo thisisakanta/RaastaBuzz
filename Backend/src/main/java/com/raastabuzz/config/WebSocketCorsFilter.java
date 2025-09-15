@@ -1,14 +1,19 @@
 package com.raastabuzz.config;
 
-import jakarta.servlet.*;
+import java.io.IOException;
+
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -32,7 +37,7 @@ public class WebSocketCorsFilter implements Filter {
             // Allow specific origins or all for development
             if (origin != null && (origin.startsWith("http://localhost:")
                     || origin.startsWith("http://ec2-51-20-34-148.eu-north-1.compute.amazonaws.com:3030")
-                    || origin.startsWith("http://51.20.34.148:3000"))) {
+                    || origin.startsWith("http://16.171.58.56:3000"))) {
                 response.setHeader("Access-Control-Allow-Origin", origin);
 //                System.out.println("2");
             } else if (origin != null && origin.startsWith("http://localhost:")) {

@@ -16,7 +16,7 @@ public class CorsConfig {
                 registry.addMapping("/api/**")
                         .allowedOriginPatterns("http://localhost:3000",
                         "http://ec2-51-20-34-148.eu-north-1.compute.amazonaws.com:3030",
-                        "http://13.49.222.242:3000"
+                        "http://16.171.58.56:3000"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
