@@ -5,6 +5,9 @@ WORKDIR /app
 
 # Install dependencies
 COPY package.json package-lock.json ./
+
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY}
 RUN npm ci
 
 # Copy source code
