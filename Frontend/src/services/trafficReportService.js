@@ -152,6 +152,8 @@ export const trafficReportService = {
       return; // Already connected
     }
 
+    //needs to change here for real time update///
+
     const socket = new SockJS('http://localhost:8080/ws'); // Adjust to your backend WebSocket URL
     this.stompClient = new Client({
       webSocketFactory: () => socket,

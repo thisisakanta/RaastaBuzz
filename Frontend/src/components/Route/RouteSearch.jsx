@@ -20,14 +20,20 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
+import { Autocomplete } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 
 import TrafficReportsList from "../Traffic/TrafficReportsList"; // Import the TrafficReportsList component
 
 const libraries = ["places"];
 
-const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
+const RouteSearch = ({
+  isLoaded,
+  loadError,
+  onRouteCalculated,
+  routeData,
+  onClearRoute,
+}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [routes, setRoutes] = useState([]);
@@ -37,10 +43,7 @@ const RouteSearch = ({ onRouteCalculated, routeData, onClearRoute }) => {
   const destinationRef = useRef();
 
   // Ensure Google Maps API is loaded
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: libraries,
-  });
+  const { isLoaded, loadError } = { isLoaded, loadError };
 
   // Autofill start location with current location
   useEffect(() => {

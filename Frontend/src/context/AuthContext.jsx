@@ -1,7 +1,9 @@
 import axios from "axios";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -34,13 +36,10 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       // Call backend login endpoint
-      const response = await axios.post(
-        "http://localhost:8080/api/auth/signin",
-        {
-          email,
-          password,
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/auth/signin`, {
+        email,
+        password,
+      });
       // The backend returns JwtResponse
       const { token, id, name, email: userEmail, role, points } = response.data;
       const user = { id, name, email: userEmail, role, points };
@@ -57,7 +56,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     // You may need to adjust this for your backend registration endpoint
     const response = await axios.post(
-      "http://localhost:8080/api/auth/register",
+      `${API_BASE_URL}/auth/register`,
       userData
     );
     const { user, token } = response.data;

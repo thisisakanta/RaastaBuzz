@@ -1,11 +1,10 @@
 import NavigationIcon from "@mui/icons-material/Navigation";
 import { Alert, Box, Button, Grid, Paper, Typography } from "@mui/material";
 import { useJsApiLoader } from "@react-google-maps/api";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import TrafficMap from "../components/Map/TrafficMap";
 import RouteSearch from "../components/Route/RouteSearch";
 import TrafficReportDialog from "../components/Traffic/TrafficReportDialog";
-import TrafficReportsList from "../components/Traffic/TrafficReportsList";
 import { useAuth } from "../context/AuthContext";
 
 const libraries = ["places"];
@@ -77,6 +76,8 @@ const Home = () => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {/* Route Search with Google Maps Integration */}
             <RouteSearch
+              isLoaded={isLoaded}
+              loadError={loadError}
               onRouteCalculated={setRouteData}
               routeData={routeData}
               onClearRoute={handleClearRoute}
