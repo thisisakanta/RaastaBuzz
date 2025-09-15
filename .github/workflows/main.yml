@@ -132,11 +132,11 @@ jobs:
           # Deploy on EC2
           ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} << 'DEPLOY_EOF'
             cd ~/raastabuzz-app
-            docker-compose pull
-            docker-compose down
-            docker-compose up -d
+            sudo docker-compose pull
+            sudo docker-compose down
+            sudo docker-compose up -d
             sleep 15
-            docker-compose ps
+            sudo docker-compose ps
             echo " Deployment completed!"
             echo "Frontend: http://${{ secrets.AWS_EC2_HOST }}:3000"
             echo "Backend: http://${{ secrets.AWS_EC2_HOST }}:8080"
